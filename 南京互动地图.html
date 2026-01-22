@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>南京夫子庙秦淮河景区互动游览地图</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+        }
+        
+        #sidebar {
+            width: 350px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        
+        #map {
+            flex: 1;
+            height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .route-section {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .route-section:hover {
+            background: #f9f9f9;
+        }
+        
+        .route-section.active {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-number {
+            background: #ff9800;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        .section-info {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+            margin-left: 34px;
+        }
+        
+        .attractions {
+            margin-top: 10px;
+            margin-left: 34px;
+        }
+        
+        .attraction-item {
+            font-size: 12px;
+            color: #888;
+            padding: 3px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .attraction-item::before {
+            content: "•";
+            color: #ff9800;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .tips {
+            padding: 15px;
+            background: #e3f2fd;
+            margin: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #1976d2;
+        }
+        
+        .tips h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .tips ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .tips li {
+            padding: 3px 0;
+        }
+        
+        .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+        }
+        
+        .popup-content {
+            max-width: 250px;
+        }
+        
+        .popup-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .popup-info {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+        
+        .popup-price {
+            color: #f5576c;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            
+            #sidebar {
+                width: 100%;
+                height: 40vh;
+            }
+            
+            #map {
+                height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div class="header">
+            <h1>🏮 夫子庙秦淮河游览路线</h1>
+            <p>亲子友好·不走回头路·灯会精华版</p>
+            <p style="margin-top: 5px; font-size: 11px;">总距离: 4.5公里 | 建议时长: 5.5-6小时</p>
+        </div>
+        
+        <div class="tips">
+            <h3>💡 游览提示</h3>
+            <ul>
+                <li>🕒 最佳入园时间：15:00-16:00</li>
+                <li>🚇 起点：地铁3号线夫子庙站2号口</li>
+                <li>🚇 终点：步行5分钟到1号线中华门站</li>
+                <li>📱 关注"秦淮文旅"公众号获取最新信息</li>
+            </ul>
+        </div>
+        
+        <div class="route-section active" data-section="1">
+            <div class="section-title">
+                <span class="section-number">1</span>
+                文脉启程·夫子庙核心区
+            </div>
+            <div class="section-info">
+                <div>📍 距离: 1.2公里 | ⏱️ 建议停留: 1.5小时</div>
+                <div class="attractions">
+                    <div class="attraction-item">大成殿 (门票30元)</div>
+                    <div class="attraction-item">江南贡院 & 科举博物馆 (门票50元)</div>
+                    <div class="attraction-item">泮池码头</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="route-section" data-section="2">
+            <div class="section-title">
+                <span class="section-number">2</span>
+                六朝遗韵·乌衣巷&白鹭洲
+            </div>
+            <div class="section-info">
+                <div>📍 距离: 1.3公里 | ⏱️ 建议停留: 1-1.5小时</div>
+                <div class="attractions">
+                    <div class="attraction-item">乌衣巷 (免费)</div>
+                    <div class="attraction-item">文德桥 (蓝调时刻拍摄最佳)</div>
+                    <div class="attraction-item">白鹭洲公园 (水幕激光秀19:00/20:00)</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="route-section" data-section="3">
+            <div class="section-title">
+                <span class="section-number">3</span>
+                市井烟火·老门东深度游
+            </div>
+            <div class="section-info">
+                <div>📍 距离: 2.0公里 | ⏱️ 建议停留: 1.5-2小时</div>
+                <div class="attractions">
+                    <div class="attraction-item">老门东主街 (美食集中)</div>
+                    <div class="attraction-item">先锋书店 (二楼露台)</div>
+                    <div class="attraction-item">非遗体验 (金陵刻经、云锦小织机)</div>
+                    <div class="attraction-item">明城墙中华门段 (门票50元)</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tips">
+            <h3>🎪 亲子友好特色</h3>
+            <ul>
+                <li>🎯 科举VR体验、非遗DIY</li>
+                <li>🎯 集章打卡换文创</li>
+                <li>🎯 老门东小吃一条街</li>
+                <li>🎯 推车可进白鹭洲和老门东</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 初始化地图
+        const map = L.map('map').setView([32.028, 118.785], 15);
+        
+        // 添加地图底图
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // 定义景点数据
+        const attractions = [
+            {
+                id: 'start',
+                name: '夫子庙东牌坊',
+                coords: [32.0302, 118.7850],
+                section: 1,
+                info: '游览起点，天下文枢牌坊所在地',
+                price: '免费'
+            },
+            {
+                id: 'dachengdian',
+                name: '大成殿',
+                coords: [32.0300, 118.7845],
+                section: 1,
+                info: '孔子像、编钟表演，孩子可挂祈福牌',
+                price: '门票30元'
+            },
+            {
+                id: 'keju',
+                name: '江南贡院 & 中国科举博物馆',
+                coords: [32.0295, 118.7840],
+                section: 1,
+                info: '地下四层沉浸式体验，号舍VR体验、金榜题名展区',
+                price: '门票50元'
+            },
+            {
+                id: 'panchi',
+                name: '泮池码头',
+                coords: [32.0290, 118.7835],
+                section: 1,
+                info: '秦淮河畔，可乘船游览',
+                price: '免费'
+            },
+            {
+                id: 'wuyixiang',
+                name: '乌衣巷',
+                coords: [32.0285, 118.7842],
+                section: 2,
+                info: '“旧时王谢堂前燕”诗碑打卡地',
+                price: '免费'
+            },
+            {
+                id: 'wendeqiao',
+                name: '文德桥',
+                coords: [32.0280, 118.7848],
+                section: 2,
+                info: '经典机位，拍秦淮河双桥倒影，蓝调时刻最佳',
+                price: '免费'
+            },
+            {
+                id: 'bailuzhou',
+                name: '白鹭洲公园',
+                coords: [32.0270, 118.7855],
+                section: 2,
+                info: '“金陵十二钗”花灯，水幕激光秀(19:00/20:00)',
+                price: '免费'
+            },
+            {
+                id: 'laomendong',
+                name: '老门东主街',
+                coords: [32.0255, 118.7850],
+                section: 3,
+                info: '美食集中地：小郑酥烧饼、陆氏梅花糕、蓝老大糖粥藕',
+                price: '美食自理'
+            },
+            {
+                id: 'xianfeng',
+                name: '先锋书店',
+                coords: [32.0250, 118.7852],
+                section: 3,
+                info: '二楼露台可拍青砖黛瓦',
+                price: '免费'
+            },
+            {
+                id: 'feiyi',
+                name: '非遗体验区',
+                coords: [32.0245, 118.7850],
+                section: 3,
+                info: '金陵刻经、云锦小织机(亲子互动)，寻光之旅集章打卡',
+                price: '体验项目收费'
+            },
+            {
+                id: 'qiang',
+                name: '明城墙（中华门段）',
+                coords: [32.0230, 118.7855],
+                section: 3,
+                info: '俯瞰秦淮河+老城南夜景，视野无敌',
+                price: '门票50元'
+            },
+            {
+                id: 'end',
+                name: '老门东南口（终点）',
+                coords: [32.0225, 118.7860],
+                section: 3,
+                info: '游览结束，步行5分钟到地铁1号线中华门站',
+                price: '免费'
+            }
+        ];
+        
+        // 定义路线段
+        const routeSegments = [
+            {
+                section: 1,
+                coords: [
+                    [32.0302, 118.7850],
+                    [32.0300, 118.7845],
+                    [32.0295, 118.7840],
+                    [32.0290, 118.7835]
+                ],
+                color: '#ff9800'
+            },
+            {
+                section: 2,
+                coords: [
+                    [32.0290, 118.7835],
+                    [32.0285, 118.7842],
+                    [32.0280, 118.7848],
+                    [32.0270, 118.7855]
+                ],
+                color: '#4caf50'
+            },
+            {
+                section: 3,
+                coords: [
+                    [32.0270, 118.7855],
+                    [32.0255, 118.7850],
+                    [32.0250, 118.7852],
+                    [32.0245, 118.7850],
+                    [32.0230, 118.7855],
+                    [32.0225, 118.7860]
+                ],
+                color: '#2196f3'
+            }
+        ];
+        
+        // 添加路线到地图
+        const routeLayers = {};
+        routeSegments.forEach(segment => {
+            const polyline = L.polyline(segment.coords, {
+                color: segment.color,
+                weight: 5,
+                opacity: 0.8,
+                dashArray: '10, 5'
+            }).addTo(map);
+            
+            routeLayers[segment.section] = polyline;
+        });
+        
+        // 添加景点标记
+        const markers = {};
+        attractions.forEach(attraction => {
+            const icon = L.divIcon({
+                html: `<div style="background: ${routeSegments[attraction.section-1].color}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">${attraction.section}</div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                className: 'custom-marker'
+            });
+            
+            const marker = L.marker(attraction.coords, { icon: icon })
+                .addTo(map)
+                .bindPopup(`
+                    <div class="popup-content">
+                        <div class="popup-title">${attraction.name}</div>
+                        <div class="popup-info">${attraction.info}</div>
+                        <div class="popup-price">${attraction.price}</div>
+                    </div>
+                `);
+            
+            markers[attraction.id] = marker;
+        });
+        
+        // 侧边栏交互
+        document.querySelectorAll('.route-section').forEach(section => {
+            section.addEventListener('click', function() {
+                // 移除所有active类
+                document.querySelectorAll('.route-section').forEach(s => s.classList.remove('active'));
+                // 添加active类到当前项
+                this.classList.add('active');
+                
+                // 获取路段号
+                const sectionNum = parseInt(this.dataset.section);
+                
+                // 聚焦到对应路线
+                if (routeLayers[sectionNum]) {
+                    map.fitBounds(routeLayers[sectionNum].getBounds(), {
+                        padding: [20, 20]
+                    });
+                }
+                
+                // 高亮显示该路段的标记
+                Object.values(markers).forEach(marker => marker.setOpacity(0.3));
+                attractions
+                    .filter(a => a.section === sectionNum)
+                    .forEach(a => markers[a.id].setOpacity(1));
+            });
+        });
+        
+        // 初始聚焦到整个路线
+        const allCoords = attractions.map(a => a.coords);
+        map.fitBounds(allCoords, {
+            padding: [20, 20]
+        });
+        
+        // 添加比例尺
+        L.control.scale({ position: 'bottomright' }).addTo(map);
+        
+        // 添加图例
+        const legend = L.control({ position: 'bottomleft' });
+        legend.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'legend');
+            div.style.background = 'white';
+            div.style.padding = '10px';
+            div.style.borderRadius = '5px';
+            div.style.boxShadow = '0 1px 5px rgba(0,0,0,0.1)';
+            div.innerHTML = `
+                <div style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">路线图例</div>
+                <div style="font-size: 11px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 3px;">
+                        <div style="width: 20px; height: 3px; background: #ff9800; margin-right: 5px;"></div>
+                        第一段: 夫子庙核心区
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 3px;">
+                        <div style="width: 20px; height: 3px; background: #4caf50; margin-right: 5px;"></div>
+                        第二段: 乌衣巷&白鹭洲
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 20px; height: 3px; background: #2196f3; margin-right: 5px;"></div>
+                        第三段: 老门东深度游
+                    </div>
+                </div>
+            `;
+            return div;
+        };
+        legend.addTo(map);
+    </script>
+</body>
+</html>
